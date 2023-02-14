@@ -22,7 +22,7 @@ app.post("/api/notes", (req, res) => {
   const newNote = req.body;
   newNote.id = uuidv4();
   dbFile.push(newNote);
-  fs.writeFileSync("./db/db.json", JSON.stringify(dbFile), (err) => {
+  fs.writeFile("./db/db.json", JSON.stringify(dbFile), (err) => {
     if (err) {
       console.error("Error writing to the database file", err);
     }

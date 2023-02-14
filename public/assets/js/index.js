@@ -1,8 +1,16 @@
-const noteTitle = document.querySelector('.note-title');
-const noteText = document.querySelector('.note-textarea');
-const saveNoteBtn = document.querySelector('.save-note');
-const newNoteBtn = document.querySelector('.new-note');
-const noteList = document.querySelectorAll('.list-container .list-group');
+let noteTitle = document.querySelector('.note-title');
+let noteText = document.querySelector('.note-textarea');
+let saveNoteBtn = document.querySelector('.save-note');
+let newNoteBtn = document.querySelector('.new-note');
+let noteList = document.querySelectorAll('.list-container .list-group');
+
+if (window.location.pathname === '/notes') {
+  noteTitle = document.querySelector('.note-title');
+  noteText = document.querySelector('.note-textarea');
+  saveNoteBtn = document.querySelector('.save-note');
+  newNoteBtn = document.querySelector('.new-note');
+  noteList = document.querySelectorAll('.list-container .list-group');
+}
 
 const hideElement = (elem) => {
   elem.style.display = 'none';
@@ -14,33 +22,36 @@ const showElement = (elem) => {
 
 let activeNote = {};
 
-const fetchNotes = () => {
-  return fetch('/api/notes', {
+const getNotes = () => {
+  fetch('/api/notes', {
     method: 'GET',
     headers: {
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   });
 };
+
 
 const postNote = (note) => {
-  return fetch('/api/notes', {
+  fetch('/api/notes', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(note)
+    body: JSON.stringify(note),
   });
 };
 
+
 const removeNote = (id) => {
-  return fetch(`/api/notes/${id}`, {
+  fetch(`/api/notes/${id}`, {
     method: 'DELETE',
     headers: {
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   });
 };
+
 
 const displayActiveNote = () => {
   hideElement(saveNoteBtn);
@@ -63,7 +74,7 @@ const handleSaveNote = () => {
     text: noteText.value
   };
   postNote(newNote).then(() => {
-    fetchAndDisplayNotes();
+    getAndDisplayNotes();
     displayActiveNote();
   });
 };
@@ -75,8 +86,9 @@ const handleDeleteNote = (event) => {
   if (activeNote.id === noteId) {
     activeNote = {};
   }
+  
   removeNote(noteId).then(() => {
-    fetchAndDisplayNotes();
+    getAndDisplayNotes();
     displayActiveNote();
   });
 };
@@ -87,7 +99,72 @@ const handleViewNote = (event) => {
   displayActiveNote();
 };
 
-const handleNewNote = (event) => {
+const handleNewViewNote = (event) => {
   activeNote = {};
   displayActiveNote();
 };
+
+const handleRenderSaveBtn = () => {
+  if (!noteTitle.value.trim() || !noteText.value.trim()) {
+    hideElement(saveNoteBtn);
+  } else {
+    showElement(saveNoteBtn);
+  }
+};
+
+const displayNoteList = async (notes) => {
+  let Notes = await notes.json();
+  if (window.location.pathname === '/notes') {
+    noteList.forEach((el) => (el.innerHTML = ''));
+  }
+
+let noteItemsList = [];
+
+  const li = createListItem = (text, delBtn = true) => {
+    const liEl = document.createElement('li');
+    liEl.classList.add('list-group-item');
+
+    const spanEl = document.createElement('span');
+    spanEl.classList.add('font-weight-bold');
+    spanEl.innerText = text;
+    li.addEventListener('click', handleViewNote);
+
+    liEl.append(spanEl);
+
+    if (delBtn) {
+      const delBtnEl = document.createElement('i');
+      delBtnEl.classList.add('fas', 'fa-trash-alt', 'float-right', 'text-danger', 'delete-note');
+      delBtnEl.addEventListener('click', handleDeleteNote);
+      liEl.append(delBtnEl);
+    }
+
+    return liEl;
+  };
+
+  if (notes.length === 0) {
+    noteItemsList.push(createListItem('No saved Notes', false));
+  }
+
+  notes.forEach((note) => {
+    const li = createListItem(note.title);
+    li.dataset.note = JSON.stringify(note);
+
+    noteItemsList.push(li);
+  });
+
+  if (window.location.pathname === '/notes') {
+    noteItemsList.forEach((note) => noteList[0].append(note));
+  }
+};
+
+const getAndDisplayNotes = () => getNotes().then(displayNoteList);
+
+if (window.location.pathname === '/notes') {
+
+  noteTitle.addEventListener('keyup', handleRenderSaveBtn);
+  noteText.addEventListener('keyup', handleRenderSaveBtn);
+  saveNoteBtn.addEventListener('click', handleSaveNote);
+  newNoteBtn.addEventListener('click', handleNewViewNote);
+}
+
+getAndDisplayNotes();
